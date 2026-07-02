@@ -6,7 +6,7 @@ import time
 from io import BytesIO
 
 # Page Configuration
-st.set_page_config(page_title="Romsons Enterprise Logistics Portal", page_icon="🚚", layout="wide")
+st.set_page_config(page_title="Romsons Prime Logistics Portal", page_icon="🚚", layout="wide")
 
 # Custom UI Styling
 st.markdown("""
@@ -55,7 +55,7 @@ if 'logged_in' not in st.session_state:
 
 # --- SECURED LOGIN SCREEN ---
 if not st.session_state['logged_in']:
-    st.markdown("<div class='main-title'>🚚 Romsons India | Central Logistics Portal</div>", unsafe_allow_html=True)
+    st.markdown("<div class='main-title'>🚚 Romsons.In | Central Logistics Portal</div>", unsafe_allow_html=True)
     with st.form("login_form"):
         wh_selection = st.selectbox("Select Your Warehouse Node / Role", list(WAREHOUSES.keys()))
         password = st.text_input("Enter Node Password", type="password")
@@ -168,7 +168,7 @@ if st.session_state['warehouse'] == "Admin":
     # Admin Control Analytics Panel Metrics
     st.markdown("### 🔑 Admin Operations Center")
     online_nodes = [u for u in global_store["active_users"].keys() if u != "Admin"]
-    st.markdown(f"#### 🌐 Active Node Connections Live: `{len(online_nodes)}`")
+    st.markdown(f"#### 🌐 Active Warehouse: `{len(online_nodes)}`")
     if online_nodes:
         st.write(online_nodes)
         
