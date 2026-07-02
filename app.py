@@ -39,7 +39,7 @@ WAREHOUSES = {
     "RPPL - DEL": "delhi@123",
     "RPPL - BLR": "bangalore@123",
     "RPPL - KOL": "kolkata@123",
-    "RPPL - MUM": "mumbai@123",
+    "RPPL - PUN": "mumbai@123",
     "Admin": "admin@romsons"
 }
 
