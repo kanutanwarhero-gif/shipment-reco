@@ -5,10 +5,10 @@ import datetime
 import time
 from io import BytesIO
 
-# 1. Page Layout & Config
+# Page Configuration
 st.set_page_config(page_title="Romsons Enterprise Logistics Portal", page_icon="🚚", layout="wide")
 
-# Custom Premium Styling
+# Custom UI Styling
 st.markdown("""
     <style>
     .main-title { font-size:28px; font-weight:bold; color:#1E3A8A; margin-bottom:5px; }
@@ -20,27 +20,26 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Helper function to get exact Indian Standard Time (IST)
+# Helper function for Exact Indian Standard Time (IST)
 def get_ist_time():
     utc_now = datetime.datetime.utcnow()
     ist_offset = datetime.timedelta(hours=5, minutes=30)
-    ist_now = utc_now + ist_offset
-    return ist_now
+    return utc_now + ist_offset
 
-# Server Global Storage (Shared across all users instantly)
+# Server Global Storage (Shared across nodes)
 @st.cache_resource
 def get_global_storage():
     return {
         "portal_status_dict": {},        # Master Courier DB
         "last_updated": "N/A",           # Update Timestamp Banner
-        "admin_uploading": False,        # Live Lock Flag for Popup
-        "active_users": {},              # Online Warehouse Sessions Tracking
+        "admin_uploading": False,        # Strict Core Flag for Popup Lock
+        "active_users": {},              # Online Tracker
         "activity_logs": []              # System Audit Trail
     }
 
 global_store = get_global_storage()
 
-# User Credentials Logins
+# Node User Credentials Logins
 WAREHOUSES = {
     "RPPL - DEL": "delhi@123",
     "RPPL - BLR": "bangalore@123",
@@ -49,7 +48,7 @@ WAREHOUSES = {
     "Admin": "admin@romsons"
 }
 
-# Local User state initialization
+# Local User session stabilization logic
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
     st.session_state['warehouse'] = None
@@ -65,7 +64,8 @@ if not st.session_state['logged_in']:
                 st.session_state['logged_in'] = True
                 st.session_state['warehouse'] = wh_selection
                 
-                # Dynamic IST activity entry
+                # Active Ping Register
+                global_store["active_users"][wh_selection] = time.time()
                 timestamp = get_ist_time().strftime("%d-%m-%Y %I:%M:%S %p")
                 global_store["activity_logs"].append(f"🟢 [{timestamp} IST] {wh_selection} logged in.")
                 st.rerun()
@@ -73,13 +73,13 @@ if not st.session_state['logged_in']:
                 st.error("❌ Invalid Node Password!")
     st.stop()
 
-# --- REAL-TIME LIVENESS HEARTBEAT SCRIPT ---
-# Notify server that the session is active with timestamp
-global_store["active_users"][st.session_state['warehouse']] = time.time()
+# --- SERVER LIVENESS MONITOR & PERSISTENT CHECK ---
+if st.session_state['logged_in']:
+    global_store["active_users"][st.session_state['warehouse']] = time.time()
 
-# Drop dead/refreshed connections if no ping received in last 12 seconds
+# Drop disconnected node sessions silently (Timeout threshold)
 current_epoch = time.time()
-dead_sessions = [u for u, last_ping in global_store["active_users"].items() if current_epoch - last_ping > 12]
+dead_sessions = [u for u, last_ping in list(global_store["active_users"].items()) if current_epoch - last_ping > 15]
 for dead_user in dead_sessions:
     if dead_user in global_store["active_users"]:
         del global_store["active_users"][dead_user]
@@ -87,11 +87,9 @@ for dead_user in dead_sessions:
 # --- SIDEBAR CONTROL LAYOUT ---
 st.sidebar.markdown(f"**🟢 Active Node:** `{st.session_state['warehouse']}`")
 
-# Attractive Interactive Sync / Refresh Data Button
+# Attractive Manual Refresh Sync Module
 if st.sidebar.button("🔄 Sync & Refresh Live Data", use_container_width=True, type="primary"):
-    with st.spinner("Fetching latest updates from server..."):
-        time.sleep(1)
-        st.rerun()
+    st.rerun()
 
 if st.sidebar.button("Logout Node", use_container_width=True):
     timestamp = get_ist_time().strftime("%d-%m-%Y %I:%M:%S %p")
@@ -102,22 +100,21 @@ if st.sidebar.button("Logout Node", use_container_width=True):
     st.session_state['warehouse'] = None
     st.rerun()
 
-# 🛑 REQUIREMENT 2 & 3: Dynamic Real-time Popup Modal Interceptor for Warehouses
+# 🛑 REQUIREMENT 2 & 3: Dynamic Popup Interceptor (Isolated from local state crash)
 if global_store["admin_uploading"] and st.session_state['warehouse'] != "Admin":
     st.markdown("""
         <div style="background-color:#FEF3C7; padding:25px; border-radius:10px; border-left:8px solid #D97706; margin-top:50px;">
             <h3 style="color:#92400E; margin:0;">⚠️ Admin Uploading Master Data... Please Wait!</h3>
             <p style="color:#B45309; font-size:15px; margin-top:8px;">
-                Admin is currently injecting and processing the live courier platform data sheets on the server cluster. 
-                Your dashboard controls are temporarily locked to prevent reconciliation mismatches. 
-                This screen will automatically release as soon as the upload finishes.
+                Admin is currently processing the live courier portal data sheets. 
+                Your dashboard operations are temporarily frozen to ensure reconciliation integrity. 
+                Please use the "Sync & Refresh Live Data" button on the sidebar to check if the lock is lifted.
             </p>
         </div>
     """, unsafe_allow_html=True)
-    time.sleep(3)
-    st.rerun()
+    st.stop()  # Prevents rendering and scripts execution until released
 
-# --- MAIN ENGINE DASHBOARD AREA ---
+# --- MAIN DASHBOARD INTERFACE AREA ---
 st.markdown(f"<div class='main-title'>📦 Dispatch Reconciliation Dashboard — {st.session_state['warehouse']}</div>", unsafe_allow_html=True)
 st.markdown(f"<div class='banner-update'>🕒 Courier Portals Last Updated: {global_store['last_updated']} (IST)</div>", unsafe_allow_html=True)
 
@@ -130,19 +127,19 @@ def find_col_by_name(df, possible_names):
 st.sidebar.header("📁 Data Ingestion Segment")
 vinculum_file = None
 
-# Admin Panel Layout Controls (FIXED FOR REALTIME RELEASE)
+# --- EXCLUSIVE ADMIN WORKBENCH PANEL ---
 if st.session_state['warehouse'] == "Admin":
-    st.sidebar.subheader("🔒 Admin Upload Engine")
+    st.sidebar.subheader("🔒 Admin Control Matrix")
     admin_portal_files = st.sidebar.file_uploader("Upload Courier Portals (Multiple)", type=["xlsx", "csv"], accept_multiple_files=True)
     
-    # Files are selected, trigger the lock across all nodes instantly
-    if admin_portal_files:
-        if not global_store["admin_uploading"] and "lock_triggered" not in st.session_state:
-            global_store["admin_uploading"] = True
-            st.session_state["lock_triggered"] = True
-            st.rerun()
+    # 🟢 Button 1: Start Process locks the system explicitly
+    if st.sidebar.button("🔒 1. Lock Terminals & Start Processing", use_container_width=True):
+        global_store["admin_uploading"] = True
+        st.success("🔒 System terminals locked successfully. Proceed with file parsing.")
+        st.rerun()
 
-    if st.sidebar.button("🚀 Complete Upload & Save Master Data", use_container_width=True):
+    # 🟢 Button 2: Process, Save and Release Terminals strictly
+    if st.sidebar.button("🚀 2. Complete Upload & Save Master Data", use_container_width=True, type="primary"):
         if admin_portal_files:
             temp_dict = {}
             for p_file in admin_portal_files:
@@ -155,40 +152,52 @@ if st.session_state['warehouse'] == "Admin":
                         if key != 'nan':
                             temp_dict[key] = val
             
-            # Save data globally
+            # Flush data to cloud cache database registers
             global_store["portal_status_dict"] = temp_dict
             global_store["last_updated"] = get_ist_time().strftime("%d-%m-%Y %I:%M:%S %p")
             
-            # STRICT FORCE RELEASE: Release locking mechanism instantly
+            # STRICT AND ABSOLUTE UNLOCK OVERRIDE
             global_store["admin_uploading"] = False  
             
-            if "lock_triggered" in st.session_state:
-                del st.session_state["lock_triggered"]
-                
-            global_store["activity_logs"].append(f"⚡ [{global_store['last_updated']} IST] Admin successfully reconciled and saved {len(temp_dict)} master tracking numbers.")
-            st.success("✅ Global Courier Database synchronized successfully!")
+            global_store["activity_logs"].append(f"⚡ [{global_store['last_updated']} IST] Admin processed and synchronized {len(temp_dict)} master entries.")
+            st.success("✅ Master Database synchronized and terminals released!")
             st.rerun()
         else:
-            st.sidebar.error("Upload fields are empty!")
+            st.sidebar.error("Error: No files queued in slot bucket!")
+
+    # Admin Control Analytics Panel Metrics
+    st.markdown("### 🔑 Admin Operations Center")
+    online_nodes = [u for u in global_store["active_users"].keys() if u != "Admin"]
+    st.markdown(f"#### 🌐 Active Node Connections Live: `{len(online_nodes)}`")
+    if online_nodes:
+        st.write(online_nodes)
+        
+    st.markdown("<br>#### 📋 Real-time Warehouse System Registers Logs", unsafe_allow_html=True)
+    logs_rev = list(reversed(global_store["activity_logs"]))
+    st.text_area("Audit Registers Display:", value="\n".join(logs_rev) if logs_rev else "Logs empty.", height=250)
+    
+    if st.button("🗑️ Clear Audit History Registers"):
+        global_store["activity_logs"] = []
+        st.rerun()
+
+# --- STANDARD WAREHOUSE RECONCILIATION PANELS ---
 else:
     vinculum_file = st.sidebar.file_uploader("Upload Local Vinculum Base Report", type=["xlsx", "csv"])
-
-# --- WAREHOUSE DATA RECONCILIATION PROCESSOR ---
-if st.session_state['warehouse'] != "Admin":
+    
     if vinculum_file:
         if not global_store["portal_status_dict"]:
-            st.error("📥 Admin master lookup dump empty. Please await synchronization from Admin.")
+            st.error("📥 Master lookup database reference is blank. Await Admin cloud configuration synchronization.")
             st.stop()
             
         df_vinc = pd.read_csv(vinculum_file) if vinculum_file.name.endswith('.csv') else pd.read_excel(vinculum_file)
         
-        # M07 Filter Rules
+        # M07 Strict Validation Filtering
         vinc_order_id_col = find_col_by_name(df_vinc, ['Order No', 'Order ID', 'External Order No'])
         if vinc_order_id_col:
             df_vinc[vinc_order_id_col] = df_vinc[vinc_order_id_col].astype(str).str.strip()
             df_vinc = df_vinc[df_vinc[vinc_order_id_col].str.startswith('M07', na=False)]
         else:
-            st.error("❌ Error: Order reference identifier missing in Vinculum sheet!")
+            st.error("❌ Schema Validation Error: Order identifier mismatch.")
             st.stop()
             
         vinc_wh_col = find_col_by_name(df_vinc, ['SourceWH', 'Warehouse', 'WH'])
@@ -196,11 +205,11 @@ if st.session_state['warehouse'] != "Admin":
             df_vinc = df_vinc[df_vinc[vinc_wh_col] == st.session_state['warehouse']]
             
         vinc_awb_col = find_col_by_name(df_vinc, ['Tracking No', 'AWB Number', 'AWB No'])
-        vinc_ship_date = find_col_by_name(df_vinc, ['Ship Date', 'Shipped Date', 'Actual Time of Shipment'])
+        vinc_ship_date = find_col_by_name(df_vinc, ['Ship Date', 'Shipped Date'])
         vinc_del_date = find_col_by_name(df_vinc, ['Delivery Date', 'Delivered Date'])
         
         if not vinc_awb_col:
-            st.error("❌ Target tracking records column error.")
+            st.error("❌ Base Record Mapping Error: Tracking number index mismatch.")
             st.stop()
             
         df_vinc['Clean_AWB'] = df_vinc[vinc_awb_col].astype(str).str.strip()
@@ -221,7 +230,7 @@ if st.session_state['warehouse'] != "Admin":
         df_delivered = df_vinc[is_delivered]
         df_intransit = df_vinc[~is_delivered]
         
-        # Dashboard UI Cards Grid
+        # UI Metrics Analytics Display Grid
         st.markdown("### 📊 Consolidated Summary Status")
         c1, c2, c3, c4 = st.columns(4)
         c1.markdown(f"<div class='metric-card'><div class='metric-val'>{len(df_vinc)}</div><div class='metric-lbl'>Total Dispatches (M07)</div></div>", unsafe_allow_html=True)
@@ -230,10 +239,9 @@ if st.session_state['warehouse'] != "Admin":
         avg_t = df_delivered['Days_TAT_or_Aging'].mean()
         c4.markdown(f"<div class='metric-card'><div class='metric-val' style='color:#2563EB;'>{f'{avg_t:.1f} Days' if pd.notnull(avg_t) else 'N/A'}</div><div class='metric-lbl'>Avg Delivery TAT</div></div>", unsafe_allow_html=True)
         
-        # Activity Logging Hook
         if f"{st.session_state['warehouse']}_uploaded" not in st.session_state:
             timestamp = get_ist_time().strftime("%d-%m-%Y %I:%M:%S %p")
-            global_store["activity_logs"].append(f"📝 [{timestamp} IST] {st.session_state['warehouse']} uploaded Vinculum file ({len(df_vinc)} items).")
+            global_store["activity_logs"].append(f"📝 [{timestamp} IST] {st.session_state['warehouse']} evaluated and reconciled base rows.")
             st.session_state[f"{st.session_state['warehouse']}_uploaded"] = True
 
         def get_excel_bytes(dataframe):
@@ -253,33 +261,4 @@ if st.session_state['warehouse'] != "Admin":
             st.download_button("📥 Download In-Transit Tracking Sheet (.xlsx)", data=get_excel_bytes(df_intransit), file_name="In_Transit_M07_Report.xlsx")
     else:
         st.info("💡 Dashboard Active karne ke liye kripya left sidebar se apni 'Vinculum Base Sheet' upload karne ka prabandh karein.")
-        
-        # Background listener to scan if admin changes status while idle
-        time.sleep(3)
-        st.rerun()
-
-# --- EXCLUSIVE ADMIN VIEW ENGINE PANEL ---
-else:
-    st.markdown("### 🔑 Admin Operational Control Room")
-    
-    # Calculate unique online users inside threshold (Excluding Admin)
-    online_warehouses = [u for u in global_store["active_users"].keys() if u != "Admin"]
-    
-    st.markdown(f"#### 🌐 Active Warehouses Online right now: `{len(online_warehouses)}`")
-    if online_warehouses:
-        st.write(online_warehouses)
-    else:
-        st.info("No active warehouse connections detected in last 12 seconds.")
-        
-    st.markdown("<br>#### 📋 Real-time Warehouse Activity System Logs (IST Timezone)", unsafe_allow_html=True)
-    logs_reversed = list(reversed(global_store["activity_logs"]))
-    st.text_area("Audit Trail Registers:", value="\n".join(logs_reversed) if logs_reversed else "Log matrix empty.", height=280)
-    
-    if st.button("🗑️ Clear Logs History"):
-        global_store["activity_logs"] = []
-        st.rerun()
-        
-    # Auto-refresh loop for Admin screen to monitor logs/active users in real-time
-    time.sleep(4)
-    st.rerun()
 
