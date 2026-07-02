@@ -124,7 +124,7 @@ def find_col_by_name(df, possible_names):
             return col
     return None
 
-st.sidebar.header("📁 Data Ingestion Segment")
+st.sidebar.header("📁 Upload Section")
 vinculum_file = None
 
 # --- EXCLUSIVE ADMIN WORKBENCH PANEL ---
