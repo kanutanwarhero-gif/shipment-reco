@@ -35,8 +35,14 @@ if not st.session_state['logged_in']:
     st.markdown("<div class='main-title'>🚚 Logistics & Dispatch Portal</div>", unsafe_allow_html=True)
     with st.form("login_form"):
         wh_selection = st.selectbox("Select Your Warehouse / Role", list(WAREHOUSES.keys()))
-        password = st.password_input("Enter Password", type="password")
-        if st.form_submit_button("Login"):
+        
+        # 🟢 FIX: Changed st.password_input to st.text_input with type="password"
+        password = st.text_input("Enter Password", type="password")
+        
+        # 🟢 FIX: Submit button properly positioned inside the form context
+        submit_button = st.form_submit_button("Login")
+        
+        if submit_button:
             if WAREHOUSES[wh_selection] == password:
                 st.session_state['logged_in'] = True
                 st.session_state['warehouse'] = wh_selection
