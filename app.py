@@ -5,8 +5,8 @@ import datetime
 import time
 from io import BytesIO
 
-# Page Layout & Config
-st.set_page_config(page_title="Romsons Prime Logistics Portal", page_icon="🚚", layout="wide")
+# 1. Page Layout & Config
+st.set_page_config(page_title="Romsons Enterprise Logistics Portal", page_icon="🚚", layout="wide")
 
 # Custom Premium Styling
 st.markdown("""
@@ -17,13 +17,11 @@ st.markdown("""
     .metric-val { font-size: 26px; font-weight: bold; color: #1E3A8A; }
     .metric-lbl { font-size: 12px; color: #64748B; text-transform: uppercase; margin-top: 5px; font-weight: 500; }
     .banner-update { background-color: #EFF6FF; border-left: 5px solid #2563EB; padding: 10px; border-radius: 4px; color: #1E40AF; font-weight: 500; margin-bottom: 15px; }
-    .btn-sync { background-color: #10B981 !important; color: white !important; font-weight: bold; border-radius: 6px; }
     </style>
 """, unsafe_allow_html=True)
 
 # Helper function to get exact Indian Standard Time (IST)
 def get_ist_time():
-    # Adding 5 hours and 30 minutes to UTC/Server time dynamically
     utc_now = datetime.datetime.utcnow()
     ist_offset = datetime.timedelta(hours=5, minutes=30)
     ist_now = utc_now + ist_offset
@@ -47,7 +45,7 @@ WAREHOUSES = {
     "RPPL - DEL": "delhi@123",
     "RPPL - BLR": "bangalore@123",
     "RPPL - KOL": "kolkata@123",
-    "RPPL - PUN": "mumbai@123",
+    "RPPL - MUM": "mumbai@123",
     "Admin": "admin@romsons"
 }
 
@@ -58,7 +56,7 @@ if 'logged_in' not in st.session_state:
 
 # --- SECURED LOGIN SCREEN ---
 if not st.session_state['logged_in']:
-    st.markdown("<div class='main-title'>🚚 Romsons.In | Central Logistics Portal</div>", unsafe_allow_html=True)
+    st.markdown("<div class='main-title'>🚚 Romsons India | Central Logistics Portal</div>", unsafe_allow_html=True)
     with st.form("login_form"):
         wh_selection = st.selectbox("Select Your Warehouse Node / Role", list(WAREHOUSES.keys()))
         password = st.text_input("Enter Node Password", type="password")
@@ -76,7 +74,7 @@ if not st.session_state['logged_in']:
     st.stop()
 
 # --- REAL-TIME LIVENESS HEARTBEAT SCRIPT ---
-# if page is active, notify server with current timestamp
+# Notify server that the session is active with timestamp
 global_store["active_users"][st.session_state['warehouse']] = time.time()
 
 # Drop dead/refreshed connections if no ping received in last 12 seconds
@@ -89,7 +87,7 @@ for dead_user in dead_sessions:
 # --- SIDEBAR CONTROL LAYOUT ---
 st.sidebar.markdown(f"**🟢 Active Node:** `{st.session_state['warehouse']}`")
 
-# Attractive Interactive Sync / Refresh Data Button (Requirement 1)
+# Attractive Interactive Sync / Refresh Data Button
 if st.sidebar.button("🔄 Sync & Refresh Live Data", use_container_width=True, type="primary"):
     with st.spinner("Fetching latest updates from server..."):
         time.sleep(1)
@@ -114,11 +112,9 @@ if global_store["admin_uploading"] and st.session_state['warehouse'] != "Admin":
                 Your dashboard controls are temporarily locked to prevent reconciliation mismatches. 
                 This screen will automatically release as soon as the upload finishes.
             </p>
-            <div class="spinner-border text-warning" role="status"></div>
         </div>
     """, unsafe_allow_html=True)
-    # Background auto loop to check status every 4 seconds without forcing click
-    time.sleep(4)
+    time.sleep(3)
     st.rerun()
 
 # --- MAIN ENGINE DASHBOARD AREA ---
@@ -134,15 +130,15 @@ def find_col_by_name(df, possible_names):
 st.sidebar.header("📁 Data Ingestion Segment")
 vinculum_file = None
 
-# Admin Panel Layout Controls
+# Admin Panel Layout Controls (FIXED FOR REALTIME RELEASE)
 if st.session_state['warehouse'] == "Admin":
     st.sidebar.subheader("🔒 Admin Upload Engine")
     admin_portal_files = st.sidebar.file_uploader("Upload Courier Portals (Multiple)", type=["xlsx", "csv"], accept_multiple_files=True)
     
-    # Trigger active upload states
+    # Files are selected, trigger the lock across all nodes instantly
     if admin_portal_files:
-        if "lock_triggered" not in st.session_state:
-            global_store["admin_uploading"] = True  # Instantly Locks Warehouses
+        if not global_store["admin_uploading"] and "lock_triggered" not in st.session_state:
+            global_store["admin_uploading"] = True
             st.session_state["lock_triggered"] = True
             st.rerun()
 
@@ -159,9 +155,12 @@ if st.session_state['warehouse'] == "Admin":
                         if key != 'nan':
                             temp_dict[key] = val
             
+            # Save data globally
             global_store["portal_status_dict"] = temp_dict
             global_store["last_updated"] = get_ist_time().strftime("%d-%m-%Y %I:%M:%S %p")
-            global_store["admin_uploading"] = False  # Instantly Releases Warehouses
+            
+            # STRICT FORCE RELEASE: Release locking mechanism instantly
+            global_store["admin_uploading"] = False  
             
             if "lock_triggered" in st.session_state:
                 del st.session_state["lock_triggered"]
@@ -189,7 +188,7 @@ if st.session_state['warehouse'] != "Admin":
             df_vinc[vinc_order_id_col] = df_vinc[vinc_order_id_col].astype(str).str.strip()
             df_vinc = df_vinc[df_vinc[vinc_order_id_col].str.startswith('M07', na=False)]
         else:
-            st.error("❌ Error: Order reference identifier missing!")
+            st.error("❌ Error: Order reference identifier missing in Vinculum sheet!")
             st.stop()
             
         vinc_wh_col = find_col_by_name(df_vinc, ['SourceWH', 'Warehouse', 'WH'])
@@ -255,7 +254,7 @@ if st.session_state['warehouse'] != "Admin":
     else:
         st.info("💡 Dashboard Active karne ke liye kripya left sidebar se apni 'Vinculum Base Sheet' upload karne ka prabandh karein.")
         
-        # Small background silent listener to check if admin locks the terminal while idle
+        # Background listener to scan if admin changes status while idle
         time.sleep(3)
         st.rerun()
 
@@ -263,7 +262,7 @@ if st.session_state['warehouse'] != "Admin":
 else:
     st.markdown("### 🔑 Admin Operational Control Room")
     
-    # Calculate unique online users inside threshold
+    # Calculate unique online users inside threshold (Excluding Admin)
     online_warehouses = [u for u in global_store["active_users"].keys() if u != "Admin"]
     
     st.markdown(f"#### 🌐 Active Warehouses Online right now: `{len(online_warehouses)}`")
@@ -280,7 +279,7 @@ else:
         global_store["activity_logs"] = []
         st.rerun()
         
-    # Auto-refresh loop for Admin screen to monitor incoming logs/active users in real-time
+    # Auto-refresh loop for Admin screen to monitor logs/active users in real-time
     time.sleep(4)
     st.rerun()
 
