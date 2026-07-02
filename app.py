@@ -15,7 +15,6 @@ st.markdown("""
     .metric-card { background-color: #F8FAFC; border: 1px solid #E2E8F0; padding: 15px; border-radius: 8px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
     .metric-val { font-size: 26px; font-weight: bold; color: #1E3A8A; }
     .metric-lbl { font-size: 12px; color: #64748B; text-transform: uppercase; margin-top: 5px; font-weight: 500; }
-    div[data-testid="stExpander"] { border: 1px solid #E2E8F0; border-radius: 8px; background-color: white; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -35,7 +34,6 @@ if 'logged_in' not in st.session_state:
 # --- SECURED LOGIN INTERFACE ---
 if not st.session_state['logged_in']:
     st.markdown("<div class='main-title'>🚚 Romsons India | Logistics Portal</div>", unsafe_allow_html=True)
-    st.markdown("<div class='sub-title'>Please choose your node location to proceed.</div>", unsafe_allow_html=True)
     
     with st.form("login_form"):
         wh_selection = st.selectbox("Select Your Warehouse Node / Role", list(WAREHOUSES.keys()))
@@ -69,18 +67,29 @@ def find_col_by_name(df, possible_names):
             return col
     return None
 
-# Sidebar File Dropers
+# Sidebar File Droppers
 st.sidebar.header("📁 Data Ingestion Segment")
 vinculum_file = st.sidebar.file_uploader("1. Upload Vinculum Base Report (xlsx/csv)", type=["xlsx", "csv"])
 portal_files = st.sidebar.file_uploader("2. Upload Courier Portals (Amazon, DTDC, Delhivery, XB)", type=["xlsx", "csv"], accept_multiple_files=True)
 
-if vinculum_file:
+# 🛑 STRICT CONDITION Check: Jab tak dono files upload nahi hongi, dashboard blank rahega
+if vinculum_file and portal_files:
+    
     # Load Vinculum Base Data File
     if vinculum_file.name.endswith('.csv'):
         df_vinc = pd.read_csv(vinculum_file)
     else:
-        # Handles spreadsheet logs
         df_vinc = pd.read_excel(vinculum_file)
+        
+    # --- ORDER ID FILTER (M07 Only) ---
+    vinc_order_id_col = find_col_by_name(df_vinc, ['Order No', 'Order ID', 'External Order No'])
+    if vinc_order_id_col:
+        # Convert to string, replace NaN with empty string, and check if starts with 'M07'
+        df_vinc[vinc_order_id_col] = df_vinc[vinc_order_id_col].astype(str).str.strip()
+        df_vinc = df_vinc[df_vinc[vinc_order_id_col].str.startswith('M07', na=False)]
+    else:
+        st.error("❌ Error: Vinculum sheet mein 'Order No' ya 'Order ID' ka column nahi mila!")
+        st.stop()
         
     # Auto Filter data rows based on Node location login
     vinc_wh_col = find_col_by_name(df_vinc, ['SourceWH', 'Warehouse', 'WH', 'Warehouse Name'])
@@ -92,7 +101,6 @@ if vinculum_file:
     vinc_ship_date = find_col_by_name(df_vinc, ['Ship Date', 'Shipped Date', 'Actual Time of Shipment'])
     vinc_del_date = find_col_by_name(df_vinc, ['Delivery Date', 'Delivered Date'])
     vinc_status_col = find_col_by_name(df_vinc, ['Order Status', 'Delivery Status', 'Status'])
-    vinc_courier_col = find_col_by_name(df_vinc, ['Transporter', 'Courier', 'Courier Partner'])
 
     if not vinc_awb_col:
         st.error("❌ Error: 'Tracking No' or 'AWB Number' columns not detected in Vinculum Base Sheet!")
@@ -100,24 +108,19 @@ if vinculum_file:
 
     # Dynamic Cross-Reconciliation Framework
     portal_status_dict = {}
-    if portal_files:
-        for p_file in portal_files:
-            df_p = pd.read_csv(p_file) if p_file.name.endswith('.csv') else pd.read_excel(p_file)
-            
-            # Smart look-up logic irrespective of column sequence shifting
-            awb_col = find_col_by_name(df_p, ['TrackingId', 'Waybill', 'AWB No', 'AWB Number', 'Tracking Number'])
-            status_col = find_col_by_name(df_p, ['Order status', 'Current Status', 'Status', 'Delivery Status'])
-            
-            if awb_col and status_col:
-                for _, row in df_p.dropna(subset=[awb_col]).iterrows():
-                    portal_status_dict[str(row[awb_col]).strip()] = str(row[status_col]).strip()
+    for p_file in portal_files:
+        df_p = pd.read_csv(p_file) if p_file.name.endswith('.csv') else pd.read_excel(p_file)
+        
+        awb_col = find_col_by_name(df_p, ['TrackingId', 'Waybill', 'AWB No', 'AWB Number', 'Tracking Number'])
+        status_col = find_col_by_name(df_p, ['Order status', 'Current Status', 'Status', 'Delivery Status'])
+        
+        if awb_col and status_col:
+            for _, row in df_p.dropna(subset=[awb_col]).iterrows():
+                portal_status_dict[str(row[awb_col]).strip()] = str(row[status_col]).strip()
 
-    # Apply Cleaned Mapping
+    # Apply Cleaned Mapping exclusively from Courier Portals
     df_vinc['Clean_AWB'] = df_vinc[vinc_awb_col].astype(str).str.strip()
-    if portal_status_dict:
-        df_vinc['Reconciled_Status'] = df_vinc['Clean_AWB'].map(portal_status_dict).fillna(df_vinc[vinc_status_col] if vinc_status_col else "In-Transit")
-    else:
-        df_vinc['Reconciled_Status'] = df_vinc[vinc_status_col] if vinc_status_col else "In-Transit"
+    df_vinc['Reconciled_Status'] = df_vinc['Clean_AWB'].map(portal_status_dict).fillna("In-Transit")
 
     # Datetime parse cleaning & calculations 
     if vinc_ship_date: df_vinc['Ship_Clean'] = pd.to_datetime(df_vinc[vinc_ship_date], errors='coerce')
@@ -144,46 +147,13 @@ if vinculum_file:
     # --- MODERN EXECUTIVE SUMMARY VIEW METRICS BAR ---
     st.markdown("### 📊 Consolidated Summary Status")
     c1, c2, c3, c4 = st.columns(4)
-    c1.markdown(f"<div class='metric-card'><div class='metric-val'>{len(df_vinc)}</div><div class='metric-lbl'>Total Dispatches</div></div>", unsafe_allow_html=True)
+    c1.markdown(f"<div class='metric-card'><div class='metric-val'>{len(df_vinc)}</div><div class='metric-lbl'>Total Dispatches (M07)</div></div>", unsafe_allow_html=True)
     c2.markdown(f"<div class='metric-card'><div class='metric-val' style='color:#16A34A;'>{len(df_delivered)}</div><div class='metric-lbl'>Delivered Shipments</div></div>", unsafe_allow_html=True)
     c3.markdown(f"<div class='metric-card'><div class='metric-val' style='color:#EA580C;'>{len(df_intransit)}</div><div class='metric-lbl'>In-Transit Tracking</div></div>", unsafe_allow_html=True)
     
     avg_t = df_delivered['Days_TAT_or_Aging'].mean()
     avg_t_str = f"{avg_t:.1f} Days" if pd.notnull(avg_t) else "N/A"
     c4.markdown(f"<div class='metric-card'><div class='metric-val' style='color:#2563EB;'>{avg_t_str}</div><div class='metric-lbl'>Avg Delivery TAT</div></div>", unsafe_allow_html=True)
-
-    # --- WHATSAPP SUMMARY GENERATION LOGIC ---
-    st.markdown("<br>", unsafe_allow_html=True)
-    with st.expander("📲 Generate & Copy WhatsApp Daily Report Summary"):
-        courier_lbl = vinc_courier_col if vinc_courier_col else 'Transporter'
-        
-        # Aggregate logic
-        del_grp = df_delivered.groupby(courier_lbl).size() if courier_lbl in df_delivered.columns else {}
-        int_grp = df_intransit.groupby(courier_lbl).size() if courier_lbl in df_intransit.columns else {}
-        
-        whatsapp_msg = f"📦 *ROMSONS LOGISTICS DAILY REPORT* 📦\n"
-        whatsapp_msg += f"━━━━━━━━━━━━━━━━━━━━\n"
-        whatsapp_msg += f"🏢 *Warehouse:* {st.session_state['warehouse']}\n"
-        whatsapp_msg += f"📅 *Date:* {datetime.date.today().strftime('%d-%m-%Y')}\n"
-        whatsapp_msg += f"━━━━━━━━━━━━━━━━━━━━\n\n"
-        
-        whatsapp_msg += f"✅ *DELIVERED REPORT (Last 30 Days)*\n"
-        for cr, count in del_grp.items():
-            whatsapp_msg += f"• {cr}: *{count} Orders*\n"
-        whatsapp_msg += f"🔹 *Total Delivered:* **{len(df_delivered)} Orders** (Avg TAT: {avg_t_str})\n\n"
-        
-        whatsapp_msg += f"⏳ *PENDING DELIVERIES (In-Transit)*\n"
-        for cr, count in int_grp.items():
-            whatsapp_msg += f"• {cr}: *{count} Orders*\n"
-        
-        avg_age = df_intransit['Days_TAT_or_Aging'].mean()
-        avg_age_str = f"{avg_age:.1f} Days" if pd.notnull(avg_age) else "N/A"
-        whatsapp_msg += f"🔸 *Total Pending:* **{len(df_intransit)} Orders** (Avg Aging: {avg_age_str})\n"
-        whatsapp_msg += f"━━━━━━━━━━━━━━━━━━━━\n"
-        whatsapp_msg += f"🚀 *Generated via Romsons Automation Engine*"
-
-        st.text_area("WhatsApp Text Preview:", value=whatsapp_msg, height=220)
-        st.copy_to_clipboard(whatsapp_msg, before_text="📋 Copy To Clipboard", after_text="✅ Text Copied! Now Paste in WhatsApp")
 
     # Excel Download Helper Function
     def get_excel_bytes(dataframe):
@@ -194,16 +164,19 @@ if vinculum_file:
 
     # --- RECONCILED TABS VIEW AND DOWNLOAD SECTION ---
     st.markdown("<br>", unsafe_allow_html=True)
-    t1, t2, t3 = st.tabs(["📋 Master Consolidated View", "✅ Delivered Performance Sheet", "⏳ Active In-Transit Tracking"])
+    t1, t2, t3 = st.tabs(["📋 Master Consolidated View (M07 Only)", "✅ Delivered Performance Sheet", "⏳ Active In-Transit Tracking"])
     
     with t1:
         st.dataframe(df_vinc, use_container_width=True)
     with t2:
         st.dataframe(df_delivered, use_container_width=True)
-        st.download_button("📥 Download Delivered Report (.xlsx)", data=get_excel_bytes(df_delivered), file_name=f"Delivered_Report_{st.session_state['warehouse']}.xlsx")
+        st.download_button("📥 Download Delivered Report (.xlsx)", data=get_excel_bytes(df_delivered), file_name=f"Delivered_M07_Report_{st.session_state['warehouse']}.xlsx")
     with t3:
         st.dataframe(df_intransit, use_container_width=True)
-        st.download_button("📥 Download In-Transit Tracking Sheet (.xlsx)", data=get_excel_bytes(df_intransit), file_name=f"In_Transit_Report_{st.session_state['warehouse']}.xlsx")
+        st.download_button("📥 Download In-Transit Tracking Sheet (.xlsx)", data=get_excel_bytes(df_intransit), file_name=f"In_Transit_M07_Report_{st.session_state['warehouse']}.xlsx")
+
+elif vinculum_file and not portal_files:
+    st.warning("⚠️ Vinculum report upload ho gayi hai. Dashboards activate karne ke liye kripya kam se kam ek Courier Portal Dump File (Amazon/DTDC/Delhivery/XB) zaroor upload karein.")
 else:
-    st.info("💡 Dashboard Active karne ke liye kripya left sidebar se 'Vinculum Base Sheet' upload karein.")
+    st.info("💡 Dashboard Active karne ke liye kripya left sidebar se 'Vinculum Base Sheet' aur 'Courier Portal Dumps' upload karein.")
 
