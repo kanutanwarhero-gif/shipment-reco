@@ -141,7 +141,50 @@ if vinculum_file:
         with pd.ExcelWriter(out, engine='openpyxl') as w:
             df.to_excel(w, index=False)
         return out.getvalue()
+    # --- WHATSAPP SUMMARY GENERATOR CODE BLOCK ---
 
+st.markdown("### 📲 WhatsApp Shareable Summary")
+
+# Data aggregation logic for text format
+if portal_files:
+    # Delivered Courier Wise Breakdown
+    del_summary_df = df_delivered.groupby('Reconciled_Courier_or_Portal_Col').agg(
+        Count=('Clean_AWB', 'count'),
+        Avg_TAT=('TAT_Days', 'mean')
+    )
+    
+    # In-Transit Courier Wise Breakdown
+    int_summary_df = df_intransit.groupby('Reconciled_Courier_or_Portal_Col').agg(
+        Count=('Clean_AWB', 'count'),
+        Avg_Aging=('TAT_Days', 'mean')
+    )
+    
+    # Dynamic String Creation
+    whatsapp_text = f"📦 ROMSONS LOGISTICS DAILY REPORT 📦\n"
+    whatsapp_text += f"━━━━━━━━━━━━━━━━━━━━\n"
+    whatsapp_text += f"🏢 Warehouse: {st.session_state['warehouse']}\n"
+    whatsapp_text += f"📅 Date: {datetime.date.today().strftime('%d-%m-%Y')}\n"
+    whatsapp_text += f"━━━━━━━━━━━━━━━━━━━━\n\n"
+    
+    whatsapp_text += f"✅ DELIVERED REPORT (Last 30 Days)\n"
+    for courier, row in del_summary_df.iterrows():
+        whatsapp_text += f"• {courier}: {row['Count']} Orders (Avg: {row['Avg_TAT']:.1f} Days)\n"
+    whatsapp_text += f"🔹 Total Delivered: *{len(df_delivered)} Orders* (Avg TAT: {df_delivered['TAT_Days'].mean():.1f} Days)\n\n"
+    
+    whatsapp_text += f"⏳ PENDING DELIVERIES (In-Transit)\n"
+    for courier, row in int_summary_df.iterrows():
+        whatsapp_text += f"• {courier}: {row['Count']} Orders (Avg: {row['Avg_Aging']:.1f} Days)\n"
+    whatsapp_text += f"🔸 Total Pending: *{len(df_intransit)} Orders* (Avg Aging: {df_intransit['TAT_Days'].mean():.1f} Days)\n\n"
+    whatsapp_text += f"━━━━━━━━━━━━━━━━━━━━\n"
+    whatsapp_text += f"🚀 Generated via Romsons Automation Engine"
+
+    # Display Text Area and Copy Button
+    st.text_area("WhatsApp Message Preview (Niche diye button se copy karein):", value=whatsapp_text, height=250)
+    
+    # Modern Copy Component
+    st.copy_to_clipboard(whatsapp_text, before_text="📋 Copy WhatsApp Text", after_text="✅ Copied to Clipboard!")
+else:
+    st.warning("⚠️ WhatsApp summary generate karne ke liye courier sheets upload karna zaroori hai.")
     # Views and Download Tabs
     st.markdown("<br>", unsafe_allow_html=True)
     t1, t2, t3 = st.tabs(["📋 Reconciled Database", "✅ Delivered Shipments", "⏳ Active In-Transit"])
