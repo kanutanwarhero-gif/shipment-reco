@@ -23,7 +23,7 @@ WAREHOUSES = {
     "RPPL - DEL": "delhi@123",
     "RPPL - BLR": "bangalore@123",
     "RPPL - KOL": "kolkata@123",
-    "RPPL - MUM": "mumbai@123",
+    "RPPL - PUN": "mumbai@123",
     "Admin": "admin@romsons"
 }
 
@@ -68,7 +68,7 @@ def find_col_by_name(df, possible_names):
     return None
 
 # Sidebar File Droppers
-st.sidebar.header("📁 Data Ingestion Segment")
+st.sidebar.header("📁 Upload Section")
 vinculum_file = st.sidebar.file_uploader("1. Upload Vinculum Base Report (xlsx/csv)", type=["xlsx", "csv"])
 portal_files = st.sidebar.file_uploader("2. Upload Courier Portals (Amazon, DTDC, Delhivery, XB)", type=["xlsx", "csv"], accept_multiple_files=True)
 
