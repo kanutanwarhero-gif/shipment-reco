@@ -6,7 +6,7 @@ import time
 from io import BytesIO
 
 # Page Layout & Config
-st.set_page_config(page_title="Romsons Enterprise Logistics Portal", page_icon="🚚", layout="wide")
+st.set_page_config(page_title="Romsons Prime Logistics Portal", page_icon="🚚", layout="wide")
 
 # Custom Premium Styling
 st.markdown("""
