@@ -4,40 +4,52 @@ import numpy as np
 import datetime
 import time
 import os
+import base64
 from io import BytesIO
 
 # Page Layout & View Configuration
 st.set_page_config(page_title="Romsons Enterprise Logistics Portal", page_icon="🚚", layout="wide")
 
+# Helper function to convert local image to base64 string safely
+def get_base64_image(image_path):
+    if os.path.exists(image_path):
+        with open(image_path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode()
+    return ""
+
+# Fetch Base64 data strings for absolute cloud rendering
+banner_base64 = get_base64_image("login_banner.jpg")
+
 # Custom UI Styling to match eRETAIL layout perfectly
-st.markdown("""
+st.markdown(f"""
     <style>
     /* Full Page Settings */
-    .stApp {
+    .stApp {{
         background-color: #FFFFFF !important;
-    }
+    }}
     
     /* Split Screen Grid Layout Container */
-    .split-container {
+    .split-container {{
         display: flex;
         width: 100%;
         min-height: 85vh;
         margin: 0;
         padding: 0;
-    }
+    }}
     
-    /* Left Side Image Banner Framework */
-    .left-banner-side {
+    /* Left Side Image Banner Framework using dynamic Base64 background */
+    .left-banner-side {{
         flex: 1.2;
-        background-color: #0E6F62; /* Fallback Romsons Teal */
+        background-color: #0E6F62;
+        {"background-image: url('data:image/jpeg;base64," + banner_base64 + "');" if banner_base64 else ""}
         background-size: cover;
         background-position: center;
         border-radius: 12px 0 0 12px;
         min-height: 85vh;
-    }
+    }}
     
     /* Right Side Login Form Framework */
-    .right-login-side {
+    .right-login-side {{
         flex: 0.9;
         background-color: #FFFFFF;
         padding: 50px 70px;
@@ -46,32 +58,32 @@ st.markdown("""
         justify-content: center;
         border-radius: 0 12px 12px 0;
         border: 1px solid #E5E7EB;
-    }
+    }}
     
     /* Center Box For Internal Inputs styling */
-    .login-form-wrapper {
+    .login-form-wrapper {{
         width: 100%;
         max-width: 400px;
         margin: 0 auto;
-    }
+    }}
     
-    /* 🟢 FIX 2: Input Field Containers & White Text Labels */
-    .stSelectbox label, .stTextInput label {
+    /* Input Field Containers & Labels */
+    .stSelectbox label, .stTextInput label {{
         color: #111111 !important;
         font-weight: bold !important;
         font-size: 14px !important;
         margin-bottom: 5px !important;
-    }
+    }}
     
     /* Styling inputs text inside fields */
-    .stSelectbox div[data-baseweb="select"], .stTextInput input {
+    .stSelectbox div[data-baseweb="select"], .stTextInput input {{
         background-color: #F3F4F6 !important;
         color: #111111 !important;
         border: 1px solid #D1D5DB !important;
-    }
+    }}
     
-    /* 🟢 FIX 1: eRETAIL Gradient Blue Login Button */
-    div.stButton > button:first-child {
+    /* eRETAIL Gradient Blue Login Button */
+    div.stButton > button:first-child {{
         background: linear-gradient(180deg, #2A52BE 0%, #1E3A8A 100%) !important;
         color: #FFFFFF !important;
         border: 1px solid #1E3A8A !important;
@@ -81,19 +93,19 @@ st.markdown("""
         box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-    }
-    div.stButton > button:first-child:hover {
+    }}
+    div.stButton > button:first-child:hover {{
         background: linear-gradient(180deg, #1E3A8A 0%, #172554 100%) !important;
         border-color: #172554 !important;
-    }
+    }}
     
     /* Core Dashboards Element Styles */
-    .main-title { font-size:26px; font-weight:bold; color:#0E6F62; margin-bottom:5px; }
-    .sub-title { font-size:13px; color:#4B5563; margin-bottom:20px; }
-    .metric-card { background-color: #F9FAFB; border: 1px solid #E5E7EB; padding: 15px; border-radius: 8px; text-align: center; }
-    .metric-val { font-size: 26px; font-weight: bold; color: #0E6F62; }
-    .metric-lbl { font-size: 12px; color: #6B7280; text-transform: uppercase; font-weight: 600; }
-    .banner-update { background-color: #F0FDF4; border-left: 5px solid #0E6F62; padding: 10px; color: #0E6F62; font-weight: 500; margin-bottom: 15px; }
+    .main-title {{ font-size:26px; font-weight:bold; color:#0E6F62; margin-bottom:5px; }}
+    .sub-title {{ font-size:13px; color:#4B5563; margin-bottom:20px; }}
+    .metric-card {{ background-color: #F9FAFB; border: 1px solid #E5E7EB; padding: 15px; border-radius: 8px; text-align: center; }}
+    .metric-val {{ font-size: 26px; font-weight: bold; color: #0E6F62; }}
+    .metric-lbl {{ font-size: 12px; color: #6B7280; text-transform: uppercase; font-weight: 600; }}
+    .banner-update {{ background-color: #F0FDF4; border-left: 5px solid #0E6F62; padding: 10px; color: #0E6F62; font-weight: 500; margin-bottom: 15px; }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -131,23 +143,17 @@ if 'logged_in' not in st.session_state:
 
 # --- eRETAIL EXACT MATCH SPLIT LOGIN INTERFACE ---
 if not st.session_state['logged_in']:
-    # Outer split columns box mapping
     col_left, col_right = st.columns([1.2, 0.9])
     
     with col_left:
-        # 🟢 FIX 4: Check if left side image dump exists, else use standard gradient
-        if os.path.exists("login_banner.jpg"):
-            # Uses HTML wrapper injection to preserve background dimensions
-            st.markdown(f"""
-                <div class="left-banner-side" style="background-image: url('data:image/jpeg;base64,');">
-                    <img src="app/static/login_banner.jpg" style="width:100%; height:85vh; object-fit:cover; border-radius:12px 0 0 12px;" />
-                </div>
-            """, unsafe_allow_html=True)
+        # Renders the clean background side using Base64 directly
+        if banner_base64:
+            st.markdown('<div class="left-banner-side"></div>', unsafe_allow_html=True)
         else:
             st.markdown("""
                 <div class="left-banner-side" style="padding:60px; display:flex; flex-direction:column; justify-content:center; color:white;">
                     <h1 style="font-size:36px; font-weight:800; line-height:1.2;">Your business doesn't<br>stop at your desk.</h1>
-                    <p style="font-size:15px; opacity:0.9; margin-top:10px;">Please put 'login_banner.jpg' inside your GitHub repository folder to view the exact split image design look.</p>
+                    <p style="font-size:15px; opacity:0.9; margin-top:10px;">Please ensure 'login_banner.jpg' is present in your root directory.</p>
                 </div>
             """, unsafe_allow_html=True)
             
@@ -155,13 +161,13 @@ if not st.session_state['logged_in']:
         st.markdown('<div class="right-login-side">', unsafe_allow_html=True)
         st.markdown('<div class="login-form-wrapper">', unsafe_allow_html=True)
         
-        # 🟢 FIX 3: Strict Logo Loader
+        # Logo rendering check using native st.image for perfect alignment
         if os.path.exists("romsons_logo.png"):
             st.image("romsons_logo.png", use_container_width=True)
         else:
             st.markdown('<h2 style="text-align:center; color:#0E6F62; font-style:italic; margin-bottom:30px;">Romsons</h2>', unsafe_allow_html=True)
             
-        # Actual Inputs positioned directly under the logo inside frame container
+        # Selectbox and password inputs
         wh_selection = st.selectbox("Select Your Warehouse Node / Role", list(WAREHOUSES.keys()), key="node_sel")
         password = st.text_input("Enter Node Password", type="password", key="node_pass")
         
