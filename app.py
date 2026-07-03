@@ -6,10 +6,10 @@ import time
 import os
 from io import BytesIO
 
-# 1. Page Configuration
+# Page Layout & View Configuration
 st.set_page_config(page_title="Romsons Enterprise Logistics Portal", page_icon="🚚", layout="wide")
 
-# Premium Split-View Custom CSS Styling (eRETAIL Style)
+# Custom UI Styling to match eRETAIL layout perfectly
 st.markdown("""
     <style>
     /* Full Page Settings */
@@ -17,52 +17,30 @@ st.markdown("""
         background-color: #FFFFFF !important;
     }
     
-    /* Split-Screen Main Container */
+    /* Split Screen Grid Layout Container */
     .split-container {
         display: flex;
         width: 100%;
         min-height: 85vh;
         margin: 0;
         padding: 0;
-        font-family: 'Arial', sans-serif;
     }
     
-    /* Left Banner Graphic Side */
-    .left-banner {
+    /* Left Side Image Banner Framework */
+    .left-banner-side {
         flex: 1.2;
-        background: linear-gradient(135deg, #005F54 0%, #008B74 100%);
-        color: #FFFFFF;
-        padding: 60px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
+        background-color: #0E6F62; /* Fallback Romsons Teal */
+        background-size: cover;
+        background-position: center;
         border-radius: 12px 0 0 12px;
-        box-shadow: inset -10px 0 20px rgba(0,0,0,0.05);
-    }
-    .left-banner h1 {
-        font-size: 38px;
-        font-weight: 800;
-        margin-bottom: 15px;
-        line-height: 1.2;
-    }
-    .left-banner p {
-        font-size: 16px;
-        opacity: 0.9;
-        margin-bottom: 30px;
-    }
-    .feature-item {
-        margin-bottom: 15px;
-        font-size: 16px;
-        font-weight: 500;
-        display: flex;
-        align-items: center;
+        min-height: 85vh;
     }
     
-    /* Right Custom Login Card Side */
-    .right-login {
+    /* Right Side Login Form Framework */
+    .right-login-side {
         flex: 0.9;
         background-color: #FFFFFF;
-        padding: 60px;
+        padding: 50px 70px;
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -70,57 +48,62 @@ st.markdown("""
         border: 1px solid #E5E7EB;
     }
     
-    /* Romsons Typography Styles */
-    .logo-container {
-        text-align: center;
-        margin-bottom: 5px;
-    }
-    .logo-text {
-        font-size: 36px;
-        font-weight: bold;
-        color: #005F54; /* Signature Romsons Green */
-        font-style: italic;
-        margin-bottom: 0px;
-    }
-    .logo-subtext {
-        font-size: 11px;
-        color: #6B7280;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        margin-bottom: 35px;
+    /* Center Box For Internal Inputs styling */
+    .login-form-wrapper {
+        width: 100%;
+        max-width: 400px;
+        margin: 0 auto;
     }
     
-    /* Interactive Button Grid Controls */
-    div.stButton > button:first-child {
-        background: linear-gradient(90deg, #7C1A4A 0%, #A22A5E 100%) !important;
-        color: white !important;
-        border: none !important;
-        padding: 10px 24px !important;
+    /* 🟢 FIX 2: Input Field Containers & White Text Labels */
+    .stSelectbox label, .stTextInput label {
+        color: #111111 !important;
         font-weight: bold !important;
-        border-radius: 6px !important;
-        box-shadow: 0 4px 6px rgba(162, 42, 94, 0.2) !important;
+        font-size: 14px !important;
+        margin-bottom: 5px !important;
+    }
+    
+    /* Styling inputs text inside fields */
+    .stSelectbox div[data-baseweb="select"], .stTextInput input {
+        background-color: #F3F4F6 !important;
+        color: #111111 !important;
+        border: 1px solid #D1D5DB !important;
+    }
+    
+    /* 🟢 FIX 1: eRETAIL Gradient Blue Login Button */
+    div.stButton > button:first-child {
+        background: linear-gradient(180deg, #2A52BE 0%, #1E3A8A 100%) !important;
+        color: #FFFFFF !important;
+        border: 1px solid #1E3A8A !important;
+        padding: 10px 30px !important;
+        font-weight: bold !important;
+        border-radius: 4px !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
     div.stButton > button:first-child:hover {
-        background: linear-gradient(90deg, #A22A5E 0%, #7C1A4A 100%) !important;
+        background: linear-gradient(180deg, #1E3A8A 0%, #172554 100%) !important;
+        border-color: #172554 !important;
     }
     
-    /* Custom Styling for Internal Metrics */
-    .main-title { font-size:26px; font-weight:bold; color:#005F54; margin-bottom:5px; }
+    /* Core Dashboards Element Styles */
+    .main-title { font-size:26px; font-weight:bold; color:#0E6F62; margin-bottom:5px; }
     .sub-title { font-size:13px; color:#4B5563; margin-bottom:20px; }
     .metric-card { background-color: #F9FAFB; border: 1px solid #E5E7EB; padding: 15px; border-radius: 8px; text-align: center; }
-    .metric-val { font-size: 26px; font-weight: bold; color: #005F54; }
+    .metric-val { font-size: 26px; font-weight: bold; color: #0E6F62; }
     .metric-lbl { font-size: 12px; color: #6B7280; text-transform: uppercase; font-weight: 600; }
-    .banner-update { background-color: #F0FDF4; border-left: 5px solid #005F54; padding: 10px; color: #005F54; font-weight: 500; margin-bottom: 15px; }
+    .banner-update { background-color: #F0FDF4; border-left: 5px solid #0E6F62; padding: 10px; color: #0E6F62; font-weight: 500; margin-bottom: 15px; }
     </style>
 """, unsafe_allow_html=True)
 
-# Helper function for Exact Indian Standard Time (IST)
+# Helper function for Indian Standard Time (IST)
 def get_ist_time():
     utc_now = datetime.datetime.utcnow()
     ist_offset = datetime.timedelta(hours=5, minutes=30)
     return utc_now + ist_offset
 
-# Server Global Cache Storage
+# Shared Cloud Memory Cache
 @st.cache_resource
 def get_global_storage():
     return {
@@ -133,7 +116,7 @@ def get_global_storage():
 
 global_store = get_global_storage()
 
-# User Credentials Logins
+# System Node Access Setup
 WAREHOUSES = {
     "RPPL - DEL": "delhi@123",
     "RPPL - BLR": "bangalore@123",
@@ -142,62 +125,62 @@ WAREHOUSES = {
     "Admin": "admin@romsons"
 }
 
-# Local Session State Hook
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
     st.session_state['warehouse'] = None
 
-# --- RETAIL CUSTOM SPLIT INTERFACE LOGIN SCREEN ---
+# --- eRETAIL EXACT MATCH SPLIT LOGIN INTERFACE ---
 if not st.session_state['logged_in']:
-    # HTML Columns grid block
-    st.markdown('<div class="split-container">', unsafe_allow_html=True)
-    
+    # Outer split columns box mapping
     col_left, col_right = st.columns([1.2, 0.9])
     
     with col_left:
-        st.markdown("""
-            <div class="left-banner">
-                <h1>Your business doesn't<br>stop at your desk.</h1>
-                <p>Manage orders, inventory & returns anywhere with the Romsons Enterprise Portal link module.</p>
-                <div class="feature-item">✔️ Real-time SLA Status Reconciliation</div>
-                <div class="feature-item">✔️ Automated Multi-Courier Mapping Engine</div>
-                <div class="feature-item">✔️ Dynamic Multi-Node Security Access Control</div>
-                <div class="feature-item">✔️ Live Performance Analytics Tracking Dashboards</div>
-            </div>
-        """, unsafe_allow_html=True)
-        
-    with col_right:
-        st.markdown('<div class="right-login">', unsafe_allow_html=True)
-        
-        # Checking if cropped logo exists, otherwise use clean text branding
-        if os.path.exists("romsons_logo.png"):
-            st.image("romsons_logo.png", width=260)
+        # 🟢 FIX 4: Check if left side image dump exists, else use standard gradient
+        if os.path.exists("login_banner.jpg"):
+            # Uses HTML wrapper injection to preserve background dimensions
+            st.markdown(f"""
+                <div class="left-banner-side" style="background-image: url('data:image/jpeg;base64,');">
+                    <img src="app/static/login_banner.jpg" style="width:100%; height:85vh; object-fit:cover; border-radius:12px 0 0 12px;" />
+                </div>
+            """, unsafe_allow_html=True)
         else:
-            st.markdown('<div class="logo-container"><div class="logo-text">Romsons</div><div class="logo-subtext">Disposable Medical Devices</div></div>', unsafe_allow_html=True)
+            st.markdown("""
+                <div class="left-banner-side" style="padding:60px; display:flex; flex-direction:column; justify-content:center; color:white;">
+                    <h1 style="font-size:36px; font-weight:800; line-height:1.2;">Your business doesn't<br>stop at your desk.</h1>
+                    <p style="font-size:15px; opacity:0.9; margin-top:10px;">Please put 'login_banner.jpg' inside your GitHub repository folder to view the exact split image design look.</p>
+                </div>
+            """, unsafe_allow_html=True)
             
-        # Standard functional component wrappers placed inside the right side custom card layout
-        wh_selection = st.selectbox("Select Your Warehouse Node / Role", list(WAREHOUSES.keys()))
-        password = st.text_input("Enter Node Password", type="password")
+    with col_right:
+        st.markdown('<div class="right-login-side">', unsafe_allow_html=True)
+        st.markdown('<div class="login-form-wrapper">', unsafe_allow_html=True)
         
-        st.markdown('<div style="margin-top:15px;">', unsafe_allow_html=True)
-        if st.button("Login", use_container_width=True):
+        # 🟢 FIX 3: Strict Logo Loader
+        if os.path.exists("romsons_logo.png"):
+            st.image("romsons_logo.png", use_container_width=True)
+        else:
+            st.markdown('<h2 style="text-align:center; color:#0E6F62; font-style:italic; margin-bottom:30px;">Romsons</h2>', unsafe_allow_html=True)
+            
+        # Actual Inputs positioned directly under the logo inside frame container
+        wh_selection = st.selectbox("Select Your Warehouse Node / Role", list(WAREHOUSES.keys()), key="node_sel")
+        password = st.text_input("Enter Node Password", type="password", key="node_pass")
+        
+        st.markdown('<div style="margin-top:25px;">', unsafe_allow_html=True)
+        if st.button("Login", use_container_width=True, key="submit_btn"):
             if WAREHOUSES[wh_selection] == password:
                 st.session_state['logged_in'] = True
                 st.session_state['warehouse'] = wh_selection
                 
-                # Active Session Registration
                 global_store["active_users"][wh_selection] = time.time()
                 timestamp = get_ist_time().strftime("%d-%m-%Y %I:%M:%S %p")
                 global_store["activity_logs"].append(f"🟢 [{timestamp} IST] {wh_selection} logged in.")
                 st.rerun()
             else:
                 st.error("❌ Invalid Node Credentials!")
-        st.markdown('</div></div>', unsafe_allow_html=True)
-        
-    st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('</div></div></div></div>', unsafe_allow_html=True)
     st.stop()
 
-# --- SERVER LIVENESS ENGINE MONITOR ---
+# --- SERVER ACTIVE MONITOR ENGINE ---
 global_store["active_users"][st.session_state['warehouse']] = time.time()
 current_epoch = time.time()
 dead_sessions = [u for u, last_ping in list(global_store["active_users"].items()) if current_epoch - last_ping > 15]
@@ -205,7 +188,7 @@ for dead_user in dead_sessions:
     if dead_user in global_store["active_users"]:
         del global_store["active_users"][dead_user]
 
-# --- SIDEBAR SYSTEM CONTROLS ---
+# --- SIDEBAR INTERACTIVE ZONE ---
 st.sidebar.markdown(f"*🏢 Node:* {st.session_state['warehouse']}")
 
 if st.sidebar.button("🔄 Sync & Refresh Live Data", use_container_width=True):
@@ -220,7 +203,7 @@ if st.sidebar.button("Logout Node", use_container_width=True):
     st.session_state['warehouse'] = None
     st.rerun()
 
-# --- REAL-TIME INTERCEPTOR POPUP LOCK ---
+# --- MASTER BANNER UPLOAD LOCK MECHANISM ---
 if global_store["admin_uploading"] and st.session_state['warehouse'] != "Admin":
     st.markdown("""
         <div style="background-color:#FFFBEB; padding:25px; border-radius:10px; border-left:8px solid #FF9900; margin-top:50px;">
@@ -233,7 +216,7 @@ if global_store["admin_uploading"] and st.session_state['warehouse'] != "Admin":
     """, unsafe_allow_html=True)
     st.stop()
 
-# --- MAIN ENGINE CONTROL HEADERS ---
+# --- MAIN DASHBOARD INTERFACE AREA ---
 st.markdown(f"<div class='main-title'>📦 Dispatch Reconciliation Dashboard — {st.session_state['warehouse']}</div>", unsafe_allow_html=True)
 st.markdown(f"<div class='banner-update'>🕒 Courier Portals Last Updated: {global_store['last_updated']} (IST)</div>", unsafe_allow_html=True)
 
@@ -246,7 +229,7 @@ def find_col_by_name(df, possible_names):
 st.sidebar.header("📁 Data Ingestion Segment")
 vinculum_file = None
 
-# --- EXCLUSIVE ADMIN BENCHMARK CONTROL ---
+# --- EXCLUSIVE ADMIN CONTROL MATRIX ---
 if st.session_state['warehouse'] == "Admin":
     st.sidebar.subheader("🔒 Admin Controls Slot")
     admin_portal_files = st.sidebar.file_uploader("Upload Courier Portals (Multiple)", type=["xlsx", "csv"], accept_multiple_files=True)
@@ -279,7 +262,7 @@ if st.session_state['warehouse'] == "Admin":
         else:
             st.sidebar.error("No data logs detected inside file buffer!")
 
-    # Admin Monitoring Panel
+    # Admin Monitoring Panel Overview
     st.markdown("### 🔑 Admin Central Control Room")
     online_nodes = [u for u in global_store["active_users"].keys() if u != "Admin"]
     st.markdown(f"#### 🌐 Active Node Connections Live: {len(online_nodes)}")
@@ -305,7 +288,7 @@ else:
             
         df_vinc = pd.read_csv(vinculum_file) if vinculum_file.name.endswith('.csv') else pd.read_excel(vinculum_file)
         
-        # M07 Constraint Processing
+        # M07 Constraint Processing Logic
         vinc_order_id_col = find_col_by_name(df_vinc, ['Order No', 'Order ID', 'External Order No'])
         if vinc_order_id_col:
             df_vinc[vinc_order_id_col] = df_vinc[vinc_order_id_col].astype(str).str.strip()
@@ -344,7 +327,7 @@ else:
         df_delivered = df_vinc[is_delivered]
         df_intransit = df_vinc[~is_delivered]
         
-        # Grid Display Metrics Layout
+        # Grid Display Metrics Layout Counters
         st.markdown("### 📊 Consolidated Summary Status")
         c1, c2, c3, c4 = st.columns(4)
         c1.markdown(f"<div class='metric-card'><div class='metric-val'>{len(df_vinc)}</div><div class='metric-lbl'>Total Dispatches (M07)</div></div>", unsafe_allow_html=True)
@@ -368,5 +351,3 @@ else:
         with t3:
             st.dataframe(df_intransit, use_container_width=True)
             st.download_button("📥 Download In-Transit Tracking Sheet (.xlsx)", data=get_excel_bytes(df_intransit), file_name="In_Transit_M07_Report.xlsx")
-    else:
-        st.info("💡 Dashboard Active karne ke liye kripya left sidebar se apni 'Vinculum Base Sheet' upload karein.")
