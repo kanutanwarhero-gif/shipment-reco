@@ -8,7 +8,7 @@ import base64
 from io import BytesIO
 
 # Page Layout & View Configuration
-st.set_page_config(page_title="Romsons Enterprise Logistics Portal", page_icon="🚚", layout="wide")
+st.set_page_config(page_title="Romsons.In | Logistics Portal", page_icon="🚚", layout="wide")
 
 # Safe Base64 Image Encoder Utility
 def get_base64_image(image_path):
@@ -160,7 +160,7 @@ WAREHOUSES = {
     "RPPL - DEL": "delhi@123",
     "RPPL - BLR": "bangalore@123",
     "RPPL - KOL": "kolkata@123",
-    "RPPL - MUM": "mumbai@123",
+    "RPPL - PUN": "mumbai@123",
     "Admin": "admin@romsons"
 }
 
