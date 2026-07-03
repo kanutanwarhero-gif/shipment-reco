@@ -6,17 +6,76 @@ import time
 from io import BytesIO
 
 # Page Configuration
-st.set_page_config(page_title="Romsons Prime Logistics Portal", page_icon="🚚", layout="wide")
+st.set_page_config(page_title="Romsons.In Logistics Portal", page_icon="🚚", layout="wide")
 
-# Custom UI Styling
+# Premium Amazon-Inspired UI Custom CSS Styling
 st.markdown("""
     <style>
-    .main-title { font-size:28px; font-weight:bold; color:#1E3A8A; margin-bottom:5px; }
-    .sub-title { font-size:14px; color:#555555; margin-bottom:20px; }
-    .metric-card { background-color: #F8FAFC; border: 1px solid #E2E8F0; padding: 15px; border-radius: 8px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    .metric-val { font-size: 26px; font-weight: bold; color: #1E3A8A; }
-    .metric-lbl { font-size: 12px; color: #64748B; text-transform: uppercase; margin-top: 5px; font-weight: 500; }
-    .banner-update { background-color: #EFF6FF; border-left: 5px solid #2563EB; padding: 10px; border-radius: 4px; color: #1E40AF; font-weight: 500; margin-bottom: 15px; }
+    /* Global Background Fix */
+    .stApp {
+        background-color: #EAEDED !important;
+    }
+    
+    /* Centered Login Container */
+    .login-box {
+        background-color: #FFFFFF;
+        padding: 35px;
+        border-radius: 8px;
+        border: 1px solid #D5D9D9;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        max-width: 450px;
+        margin: 40px auto;
+    }
+    
+    /* Brand Logo Text */
+    .brand-logo {
+        font-family: 'Amazon Ember', 'Arial', sans-serif;
+        font-size: 32px;
+        font-weight: 700;
+        color: #232F3E;
+        text-align: center;
+        margin-bottom: 2px;
+    }
+    .brand-logo span {
+        color: #FF9900;
+    }
+    .brand-sub {
+        font-size: 13px;
+        color: #565959;
+        text-align: center;
+        margin-bottom: 25px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    /* Input Labels and Fields */
+    label {
+        font-weight: 700 !important;
+        color: #111111 !important;
+        font-size: 14px !important;
+    }
+    
+    /* Main Dashboard Header Elements */
+    .main-title { font-size:28px; font-weight:bold; color:#232F3E; margin-bottom:5px; }
+    .sub-title { font-size:14px; color:#565959; margin-bottom:20px; }
+    .metric-card { background-color: #FFFFFF; border: 1px solid #D5D9D9; padding: 15px; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.04); }
+    .metric-val { font-size: 26px; font-weight: bold; color: #232F3E; }
+    .metric-lbl { font-size: 12px; color: #565959; text-transform: uppercase; margin-top: 5px; font-weight: 600; }
+    .banner-update { background-color: #F0F2F2; border-left: 5px solid #232F3E; padding: 10px; border-radius: 4px; color: #232F3E; font-weight: 500; margin-bottom: 15px; }
+    
+    /* Custom button behavior for premium feel */
+    div.stButton > button:first-child {
+        background-color: #FF9900 !important;
+        color: #111111 !important;
+        border: 1px solid #A88734 !important;
+        border-radius: 6px !important;
+        box-shadow: 0 2px 5px rgba(213,217,217,.5) !important;
+        font-weight: 500 !important;
+    }
+    div.stButton > button:first-child:hover {
+        background-color: #F5A623 !important;
+        border-color: #846A29 !important;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -30,11 +89,11 @@ def get_ist_time():
 @st.cache_resource
 def get_global_storage():
     return {
-        "portal_status_dict": {},        # Master Courier DB
-        "last_updated": "N/A",           # Update Timestamp Banner
-        "admin_uploading": False,        # Strict Core Flag for Popup Lock
-        "active_users": {},              # Online Tracker
-        "activity_logs": []              # System Audit Trail
+        "portal_status_dict": {},        
+        "last_updated": "N/A",           
+        "admin_uploading": False,        
+        "active_users": {},              
+        "activity_logs": []              
     }
 
 global_store = get_global_storage()
@@ -53,29 +112,35 @@ if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
     st.session_state['warehouse'] = None
 
-# --- SECURED LOGIN SCREEN ---
+# --- PREMIUM AMAZON CARD LOOK LOGIN SCREEN ---
 if not st.session_state['logged_in']:
-    st.markdown("<div class='main-title'>🚚 Romsons.In | Central Logistics Portal</div>", unsafe_allow_html=True)
-    with st.form("login_form"):
-        wh_selection = st.selectbox("Select Your Warehouse Node / Role", list(WAREHOUSES.keys()))
-        password = st.text_input("Enter Node Password", type="password")
-        if st.form_submit_button("Sign In"):
-            if WAREHOUSES[wh_selection] == password:
-                st.session_state['logged_in'] = True
-                st.session_state['warehouse'] = wh_selection
-                
-                # Active Ping Register
-                global_store["active_users"][wh_selection] = time.time()
-                timestamp = get_ist_time().strftime("%d-%m-%Y %I:%M:%S %p")
-                global_store["activity_logs"].append(f"🟢 [{timestamp} IST] {wh_selection} logged in.")
-                st.rerun()
-            else:
-                st.error("❌ Invalid Node Password!")
-    st.stop()
+    # Wrapper container for centered alignment
+    st.markdown('<div class="login-box">', unsafe_allow_html=True)
+    st.markdown('<div class="brand-logo">romsons<span>.in</span></div>', unsafe_allow_html=True)
+    st.markdown('<div class="brand-sub">Central Logistics Portal</div>', unsafe_allow_html=True)
+    
+    # Using normal layout inside the styled CSS frame wrapper
+    wh_selection = st.selectbox("Select Your Warehouse Node / Role", list(WAREHOUSES.keys()))
+    password = st.text_input("Enter Node Password", type="password")
+    
+    st.markdown('<div style="margin-top:20px;">', unsafe_allow_html=True)
+    if st.button("Sign In", use_container_width=True):
+        if WAREHOUSES[wh_selection] == password:
+            st.session_state['logged_in'] = True
+            st.session_state['warehouse'] = wh_selection
+            
+            # Active Ping Register
+            global_store["active_users"][wh_selection] = time.time()
+            timestamp = get_ist_time().strftime("%d-%m-%Y %I:%M:%S %p")
+            global_store["activity_logs"].append(f"🟢 [{timestamp} IST] {wh_selection} logged in.")
+            st.rerun()
+        else:
+            st.error("❌ Invalid Node Password!")
+    st.markdown('</div></div>', unsafe_allow_html=True)
+    st.stop() 
 
-# --- SERVER LIVENESS MONITOR & PERSISTENT CHECK ---
-if st.session_state['logged_in']:
-    global_store["active_users"][st.session_state['warehouse']] = time.time()
+# --- SERVER LIVENESS MONITOR (Sirf Logged-In Users Ke Liye) ---
+global_store["active_users"][st.session_state['warehouse']] = time.time()
 
 # Drop disconnected node sessions silently (Timeout threshold)
 current_epoch = time.time()
@@ -85,10 +150,10 @@ for dead_user in dead_sessions:
         del global_store["active_users"][dead_user]
 
 # --- SIDEBAR CONTROL LAYOUT ---
-st.sidebar.markdown(f"**🟢 Active Node:** `{st.session_state['warehouse']}`")
+st.sidebar.markdown(f"*🏢 Active Node:* {st.session_state['warehouse']}")
 
 # Attractive Manual Refresh Sync Module
-if st.sidebar.button("🔄 Sync & Refresh Live Data", use_container_width=True, type="primary"):
+if st.sidebar.button("🔄 Sync & Refresh Live Data", use_container_width=True):
     st.rerun()
 
 if st.sidebar.button("Logout Node", use_container_width=True):
@@ -100,19 +165,19 @@ if st.sidebar.button("Logout Node", use_container_width=True):
     st.session_state['warehouse'] = None
     st.rerun()
 
-# 🛑 REQUIREMENT 2 & 3: Dynamic Popup Interceptor (Isolated from local state crash)
+# --- POPUP INTERCEPTOR DURING ADMIN UPLOADS ---
 if global_store["admin_uploading"] and st.session_state['warehouse'] != "Admin":
     st.markdown("""
-        <div style="background-color:#FEF3C7; padding:25px; border-radius:10px; border-left:8px solid #D97706; margin-top:50px;">
-            <h3 style="color:#92400E; margin:0;">⚠️ Admin Uploading Master Data... Please Wait!</h3>
-            <p style="color:#B45309; font-size:15px; margin-top:8px;">
+        <div style="background-color:#FFF9E6; padding:25px; border-radius:10px; border-left:8px solid #FF9900; margin-top:50px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <h3 style="color:#232F3E; margin:0;">⚠️ Admin Uploading Master Data... Please Wait!</h3>
+            <p style="color:#565959; font-size:15px; margin-top:8px;">
                 Admin is currently processing the live courier portal data sheets. 
                 Your dashboard operations are temporarily frozen to ensure reconciliation integrity. 
                 Please use the "Sync & Refresh Live Data" button on the sidebar to check if the lock is lifted.
             </p>
         </div>
     """, unsafe_allow_html=True)
-    st.stop()  # Prevents rendering and scripts execution until released
+    st.stop()  
 
 # --- MAIN DASHBOARD INTERFACE AREA ---
 st.markdown(f"<div class='main-title'>📦 Dispatch Reconciliation Dashboard — {st.session_state['warehouse']}</div>", unsafe_allow_html=True)
@@ -124,7 +189,7 @@ def find_col_by_name(df, possible_names):
             return col
     return None
 
-st.sidebar.header("📁 Upload Section")
+st.sidebar.header("📁 Data Ingestion Segment")
 vinculum_file = None
 
 # --- EXCLUSIVE ADMIN WORKBENCH PANEL ---
@@ -132,14 +197,12 @@ if st.session_state['warehouse'] == "Admin":
     st.sidebar.subheader("🔒 Admin Control Matrix")
     admin_portal_files = st.sidebar.file_uploader("Upload Courier Portals (Multiple)", type=["xlsx", "csv"], accept_multiple_files=True)
     
-    # 🟢 Button 1: Start Process locks the system explicitly
     if st.sidebar.button("🔒 1. Lock Terminals & Start Processing", use_container_width=True):
         global_store["admin_uploading"] = True
         st.success("🔒 System terminals locked successfully. Proceed with file parsing.")
         st.rerun()
 
-    # 🟢 Button 2: Process, Save and Release Terminals strictly
-    if st.sidebar.button("🚀 2. Complete Upload & Save Master Data", use_container_width=True, type="primary"):
+    if st.sidebar.button("🚀 2. Complete Upload & Save Master Data", use_container_width=True):
         if admin_portal_files:
             temp_dict = {}
             for p_file in admin_portal_files:
@@ -152,11 +215,8 @@ if st.session_state['warehouse'] == "Admin":
                         if key != 'nan':
                             temp_dict[key] = val
             
-            # Flush data to cloud cache database registers
             global_store["portal_status_dict"] = temp_dict
             global_store["last_updated"] = get_ist_time().strftime("%d-%m-%Y %I:%M:%S %p")
-            
-            # STRICT AND ABSOLUTE UNLOCK OVERRIDE
             global_store["admin_uploading"] = False  
             
             global_store["activity_logs"].append(f"⚡ [{global_store['last_updated']} IST] Admin processed and synchronized {len(temp_dict)} master entries.")
@@ -165,14 +225,14 @@ if st.session_state['warehouse'] == "Admin":
         else:
             st.sidebar.error("Error: No files queued in slot bucket!")
 
-    # Admin Control Analytics Panel Metrics
+    # Admin Dashboard
     st.markdown("### 🔑 Admin Operations Center")
     online_nodes = [u for u in global_store["active_users"].keys() if u != "Admin"]
-    st.markdown(f"#### 🌐 Active Warehouse: `{len(online_nodes)}`")
+    st.markdown(f"#### 🌐 Active Node Connections Live: {len(online_nodes)}")
     if online_nodes:
         st.write(online_nodes)
         
-    st.markdown("<br>#### 📋 Real-time Warehouse System Registers Logs", unsafe_allow_html=True)
+    st.markdown("<br>#### 📋 Real-time Warehouse System Registers Logs (IST)", unsafe_allow_html=True)
     logs_rev = list(reversed(global_store["activity_logs"]))
     st.text_area("Audit Registers Display:", value="\n".join(logs_rev) if logs_rev else "Logs empty.", height=250)
     
@@ -191,7 +251,6 @@ else:
             
         df_vinc = pd.read_csv(vinculum_file) if vinculum_file.name.endswith('.csv') else pd.read_excel(vinculum_file)
         
-        # M07 Strict Validation Filtering
         vinc_order_id_col = find_col_by_name(df_vinc, ['Order No', 'Order ID', 'External Order No'])
         if vinc_order_id_col:
             df_vinc[vinc_order_id_col] = df_vinc[vinc_order_id_col].astype(str).str.strip()
@@ -230,7 +289,6 @@ else:
         df_delivered = df_vinc[is_delivered]
         df_intransit = df_vinc[~is_delivered]
         
-        # UI Metrics Analytics Display Grid
         st.markdown("### 📊 Consolidated Summary Status")
         c1, c2, c3, c4 = st.columns(4)
         c1.markdown(f"<div class='metric-card'><div class='metric-val'>{len(df_vinc)}</div><div class='metric-lbl'>Total Dispatches (M07)</div></div>", unsafe_allow_html=True)
@@ -241,7 +299,7 @@ else:
         
         if f"{st.session_state['warehouse']}_uploaded" not in st.session_state:
             timestamp = get_ist_time().strftime("%d-%m-%Y %I:%M:%S %p")
-            global_store["activity_logs"].append(f"📝 [{timestamp} IST] {st.session_state['warehouse']} evaluated and reconciled base rows.")
+            global_store["activity_logs"].append(f"📝 [{timestamp} IST] {st.session_state['warehouse']} evaluated base rows.")
             st.session_state[f"{st.session_state['warehouse']}_uploaded"] = True
 
         def get_excel_bytes(dataframe):
@@ -259,6 +317,3 @@ else:
         with t3:
             st.dataframe(df_intransit, use_container_width=True)
             st.download_button("📥 Download In-Transit Tracking Sheet (.xlsx)", data=get_excel_bytes(df_intransit), file_name="In_Transit_M07_Report.xlsx")
-    else:
-        st.info("💡 Dashboard Active karne ke liye kripya left sidebar se apni 'Vinculum Base Sheet' upload karne ka prabandh karein.")
-
