@@ -12,9 +12,12 @@ st.set_page_config(page_title="Romsons Enterprise Logistics Portal", page_icon="
 
 # Safe Base64 Image Encoder Utility
 def get_base64_image(image_path):
-    if os.path.exists(image_path):
-        with open(image_path, "rb") as img_file:
-            return base64.b64encode(img_file.read()).decode()
+    try:
+        if os.path.exists(image_path):
+            with open(image_path, "rb") as img_file:
+                return base64.b64encode(img_file.read()).decode()
+    except Exception as e:
+        pass
     return ""
 
 # Fetch Base64 data strings for both Banner and Logo
@@ -38,12 +41,12 @@ st.markdown(f"""
         padding: 0;
     }}
     
-    /* 🟢 FIX 1: Left Side Image Banner Framework (Strict Aspect Ratio Control) */
+    /* Left Side Image Banner Framework */
     .left-banner-side {{
         flex: 1.2;
         background-color: #0E6F62;
         {"background-image: url('data:image/jpeg;base64," + banner_base64 + "');" if banner_base64 else ""}
-        background-size: contain !important; /* Prevents cropping / cutting of the banner */
+        background-size: contain !important;
         background-repeat: no-repeat !important;
         background-position: center center !important;
         border-radius: 12px 0 0 12px;
@@ -70,13 +73,15 @@ st.markdown(f"""
         margin: 0 auto;
     }}
     
-    /* 🟢 FIX 2: Strict Logo Framework via CSS base64 injection */
+    /* 🟢 RE-FIXED LOGO CONTAINER: Absolute auto-fit with no overflow constraints */
     .logo-cloud-frame {{
         width: 100%;
-        max-width: 280px;
+        max-width: 250px;
         height: auto;
-        margin: 0 auto 30px auto;
+        max-height: 90px;
+        margin: 0 auto 25px auto;
         display: block;
+        object-fit: contain;
     }}
     
     /* Input Field Containers & Labels */
@@ -158,7 +163,6 @@ if not st.session_state['logged_in']:
     col_left, col_right = st.columns([1.2, 0.9])
     
     with col_left:
-        # Renders the clean background side using Base64 directly with fixed containment properties
         if banner_base64:
             st.markdown('<div class="left-banner-side"></div>', unsafe_allow_html=True)
         else:
@@ -173,11 +177,12 @@ if not st.session_state['logged_in']:
         st.markdown('<div class="right-login-side">', unsafe_allow_html=True)
         st.markdown('<div class="login-form-wrapper">', unsafe_allow_html=True)
         
-        # 🟢 FIX 2 CONTD: Logo rendering via full base64 memory image injection
+        # 🟢 100% FIXED LOGO FALLBACK ROUTE: Base64 direct frame injection
         if logo_base64:
-            st.markdown(f'<img src="data:image/png;base64,{logo_base64}" class="logo-cloud-frame" />', unsafe_allow_html=True)
+            st.markdown(f'<img src="data:image/png;base64,{logo_base64}" class="logo-cloud-frame" alt="Romsons" />', unsafe_allow_html=True)
         else:
-            st.markdown('<h2 style="text-align:center; color:#0E6F62; font-style:italic; margin-bottom:30px;">Romsons</h2>', unsafe_allow_html=True)
+            # Agar base64 fail hota hai toh backup clean font layout chalega bina blank box error ke
+            st.markdown('<h2 style="text-align:center; color:#0E6F62; font-family:sans-serif; font-weight:bold; font-style:italic; margin-bottom:30px; letter-spacing:1px;">ROMSONS</h2>', unsafe_allow_html=True)
             
         # Selectbox and password inputs
         wh_selection = st.selectbox("Select Your Warehouse Node / Role", list(WAREHOUSES.keys()), key="node_sel")
