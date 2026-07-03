@@ -24,12 +24,21 @@ def get_base64_image(image_path):
 banner_base64 = get_base64_image("login_banner.jpg")
 logo_base64 = get_base64_image("romsons_logo.png")
 
-# Custom UI Styling to match eRETAIL layout perfectly
+# Custom UI Styling to match eRETAIL layout perfectly and fix ALL visibility bugs
 st.markdown(f"""
     <style>
     /* Full Page Settings */
     .stApp {{
         background-color: #FFFFFF !important;
+    }}
+    
+    /* 🔴 SIDEBAR VISIBILITY FIX: Force white text on dark grey sidebar fields */
+    section[data-testid="stSidebar"] *, 
+    section[data-testid="stSidebar"] label, 
+    section[data-testid="stSidebar"] p, 
+    section[data-testid="stSidebar"] span {{
+        color: #FFFFFF !important;
+        font-weight: 600 !important;
     }}
     
     /* Split Screen Grid Layout Container */
@@ -73,7 +82,7 @@ st.markdown(f"""
         margin: 0 auto;
     }}
     
-    /* 🟢 RE-FIXED LOGO CONTAINER: Absolute auto-fit with no overflow constraints */
+    /* Logo Container Framework */
     .logo-cloud-frame {{
         width: 100%;
         max-width: 250px;
@@ -84,15 +93,16 @@ st.markdown(f"""
         object-fit: contain;
     }}
     
-    /* Input Field Containers & Labels */
-    .stSelectbox label, .stTextInput label {{
+    /* 🔴 LOGIN CARD VISIBILITY FIX: Black text on white background login inputs */
+    .right-login-side label, 
+    .right-login-side p, 
+    .right-login-side span {{
         color: #111111 !important;
         font-weight: bold !important;
         font-size: 14px !important;
-        margin-bottom: 5px !important;
     }}
     
-    /* Styling inputs text inside fields */
+    /* Text input typing alignment coloring */
     .stSelectbox div[data-baseweb="select"], .stTextInput input {{
         background-color: #F3F4F6 !important;
         color: #111111 !important;
@@ -177,11 +187,10 @@ if not st.session_state['logged_in']:
         st.markdown('<div class="right-login-side">', unsafe_allow_html=True)
         st.markdown('<div class="login-form-wrapper">', unsafe_allow_html=True)
         
-        # 🟢 100% FIXED LOGO FALLBACK ROUTE: Base64 direct frame injection
+        # Logo rendering via full base64 memory image injection
         if logo_base64:
             st.markdown(f'<img src="data:image/png;base64,{logo_base64}" class="logo-cloud-frame" alt="Romsons" />', unsafe_allow_html=True)
         else:
-            # Agar base64 fail hota hai toh backup clean font layout chalega bina blank box error ke
             st.markdown('<h2 style="text-align:center; color:#0E6F62; font-family:sans-serif; font-weight:bold; font-style:italic; margin-bottom:30px; letter-spacing:1px;">ROMSONS</h2>', unsafe_allow_html=True)
             
         # Selectbox and password inputs
